@@ -14,7 +14,7 @@ export async function sendDueReminders() {
 
   const dueHackathons = await prisma.hackathon.findMany({
     where: {
-      deadline: { gte: now, lte: lookahead };
+      deadline: { gte: now, lte: lookahead },
       reminderSentAt: null,
     },
     include: {
