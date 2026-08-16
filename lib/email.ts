@@ -1,10 +1,17 @@
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+let _resend: Resend | null = null;
+function getResend() {
+  if (!_resend) {
+    _resend = new Resend(process.env.RESEND_API_KEY || "re_missing_key_placeholder");
+  }
+  return _resend;
+}
+
 const FROM = process.env.EMAIL_FROM || "Hackathon Tracker <onboarding@resend.dev>";
 
 export async function sendMagicLinkEmail(to: string, url: string) {
-  await resend.emails.send({
+  await getResend().emails.send({
     from: FROM,
     to,
     subject: "Sign in to Hackathon Tracker",
@@ -20,7 +27,7 @@ export async function sendMagicLinkEmail(to: string, url: string) {
 }
 
 export async function sendOtpEmail(to: string, code: string) {
-  await resend.emails.send({
+  await getResend().emails.send({
     from: FROM,
     to,
     subject: `${code} is your Hackathon Tracker code`,
@@ -41,7 +48,7 @@ export async function sendDeadlineReminderEmail(
     minute: "2-digit",
   });
 
-  await resend.emails.send({
+  await getResend().emails.send({
     from: FROM,
     to,
     subject: `⏰ ${hackathonName} deadline is tomorrow`,

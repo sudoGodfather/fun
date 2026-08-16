@@ -9,12 +9,12 @@ import { sendDeadlineReminderEmail } from "./email";
  */
 export async function sendDueReminders() {
   const now = new Date();
-  const windowStart = new Date(now.getTime() + 23 * 60 * 60 * 1000);
+  const lookahead = new Date(now.getTime() + 36 * 60 * 60 * 1000);
   const windowEnd = new Date(now.getTime() + 25 * 60 * 60 * 1000);
 
   const dueHackathons = await prisma.hackathon.findMany({
     where: {
-      deadline: { gte: windowStart, lte: windowEnd },
+      deadline: { gte: now, lte: lookahead },
       reminderSentAt: null,
     },
     include: {

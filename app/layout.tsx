@@ -3,6 +3,11 @@ import { Space_Grotesk, Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import Providers from "@/components/Providers";
 
+// This app is fully session-driven on every page, so there's no benefit to
+// static prerendering - and it avoids build-time errors from trying to
+// fetch session data before a real deployment URL exists.
+export const dynamic = "force-dynamic";
+
 const display = Space_Grotesk({ subsets: ["latin"], variable: "--font-display", weight: ["500", "600", "700"] });
 const body = Inter({ subsets: ["latin"], variable: "--font-body" });
 const mono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono" });
