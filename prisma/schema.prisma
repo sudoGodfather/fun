@@ -1,0 +1,117 @@
+// Prisma schema for Hackathon Tracker
+// Run `npx prisma db push` after setting DATABASE_URL in .env
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  username      String?   @unique
+  email         String?   @unique
+  emailVerified DateTime?
+  phone         String?   @unique
+  image         String?
+  passwordHash  String?
+
+  accounts Account[]
+  sessions Session[]
+
+  // Hackathons this user created
+  hackathons Hackathon[] @relation("HackathonOwner")
+
+  // Hackathons this user was added to as a team member
+  memberships TeamMember[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// One-time codes for phone (SMS OTP) and email fallback login
+model OtpCode {
+  id        String   @id @default(cuid())
+  target    String // phone number or email
+  code      String
+  expiresAt DateTime
+  consumed  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([target])
+}
+
+model Hackathon {
+  id          String   @id @default(cuid())
+  name        String
+  url         String?
+  startDate   DateTime
+  deadline    DateTime // submission deadline - what reminders are based on
+  description String?
+
+  ownerId String
+  owner   User   @relation("HackathonOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+
+  team              TeamMember[]
+  reminderSentAt    DateTime? // set once the "1 day before" email has gone out, so we don't send twice
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model TeamMember {
+  id          String  @id @default(cuid())
+  hackathonId String
+  hackathon   Hackathon @relation(fields: [hackathonId], references: [id], onDelete: Cascade)
+
+  // Either linked to a registered user (added by username) ...
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  // ...or a free-text name for teammates who haven't registered
+  name  String?
+  email String? // used to email them the reminder too, if provided
+
+  createdAt DateTime @default(now())
+
+  @@unique([hackathonId, userId])
+}
